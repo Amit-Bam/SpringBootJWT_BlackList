@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+import javax.xml.crypto.Data;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.util.Date;
@@ -58,6 +59,7 @@ public class JwtUtil {
                 .claim("roles", userDetails.getAuthorities().stream().map(GrantedAuthority::getAuthority)
                         .collect(Collectors.toList()))
                 .claim("issuedBy", "learning JWT with Spring Security")
+                .claim("typ", "access")
                 .claim("ip", ipAddress)
                 .signWith(getKey())
                 .compact();
@@ -133,10 +135,16 @@ public class JwtUtil {
             return false;
         }
     }
-
+    public Date extractIssuedAt(String token) {
+        return extractClaim(token, Claims::getIssuedAt);
+    }
     // Extract the expiration date from a JWT token
     public Date extractExpiration(String token) {
+
         return extractClaim(token, Claims::getExpiration);
+    }
+    public String extractTokenType(String token) {
+        return extractClaim(token, claims -> claims.get("typ", String.class));
     }
 
 

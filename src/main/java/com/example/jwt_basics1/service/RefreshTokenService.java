@@ -27,6 +27,9 @@ public class RefreshTokenService {
         if (!jwtUtil.validateToken(refreshToken, userDetails)) {
             throw new RuntimeException("Invalid or expired refresh token");
         }
+        if(jwtUtil.extractTokenType(refreshToken).equals("access")) {
+            throw new RuntimeException("Provided token is not a refresh token");
+        }
 
         if(tokenBlacklistService.isTokenBlacklisted(refreshToken)) {
             throw new RuntimeException("Refresh token has been blacklisted");

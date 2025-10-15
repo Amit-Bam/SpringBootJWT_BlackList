@@ -18,46 +18,44 @@ package com.example.jwt_basics1.service;
 
         // Using ConcurrentHashMap for thread safety with multiple sessions
         private final ConcurrentHashMap<String, Date> blacklistedTokens = new ConcurrentHashMap<>();
-
+        private final ConcurrentHashMap<String, Long> userLogoutTimestamps = new ConcurrentHashMap<>();
 
         public void blacklistToken(String token) {
-            try {
-                // Extract JTI and expiration date
-                String jti = jwtUtil.extractJti(token);
-                Date expiration = jwtUtil.extractExpiration(token);
+            // Explicitly blacklist this specific token
+            Date expiration = jwtUtil.extractExpiration(token);
+            blacklistedTokens.put(token,expiration);
+        }
 
-                // Only store the JTI in blacklist, not the token itself
-                if (jti != null && !jti.isEmpty()) {
-                    blacklistedTokens.put(jti, expiration);
-                }
-            } catch (Exception e) {
-                throw new JwtException(e.getMessage());
-            }
+        public void blacklistUserTokensOnLogout(String username) {
+            // Record the logout timestamp for this user
+            userLogoutTimestamps.put(username, System.currentTimeMillis());
         }
 
         public boolean isTokenBlacklisted(String token) {
-            // Only check by JTI
-            try {
-                String jti = jwtUtil.extractJti(token);
-                return jti != null && blacklistedTokens.containsKey(jti);
-            } catch (Exception e) {
-                return false;
+            // Check if token is explicitly blacklisted
+            if (blacklistedTokens.containsKey(token)) {
+                return true;
             }
+
+            try {
+                String username = jwtUtil.extractUsername(token);
+                Date issuedAt = jwtUtil.extractIssuedAt(token);
+
+                if (username != null && issuedAt != null && userLogoutTimestamps.containsKey(username)) {
+                    // If this token was issued before the user logged out, it's invalid
+                    return issuedAt.getTime() < userLogoutTimestamps.get(username);
+                }
+            } catch (Exception e) {
+                // If we can't process the token, consider it invalid
+                return true;
+            }
+
+            return false;
         }
 
-        /**
-         * Remove all expired tokens from the blacklist
-         */
         public synchronized void removeExpiredTokens() {
             Date now = new Date();
             blacklistedTokens.entrySet().removeIf(entry -> entry.getValue().before(now));
         }
 
-        /*
-         * Scheduled task to clean up expired tokens
-
-        @Scheduled(fixedRate = 3600000) // Run every hour
-        public void scheduledCleanup() {
-            removeExpiredTokens();
-        }*/
     }
