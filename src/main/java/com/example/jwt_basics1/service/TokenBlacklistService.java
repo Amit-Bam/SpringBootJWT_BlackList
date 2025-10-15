@@ -2,6 +2,7 @@ package com.example.jwt_basics1.service;
 
     import com.example.jwt_basics1.config.JwtUtil;
     import io.jsonwebtoken.Claims;
+    import io.jsonwebtoken.JwtException;
     import org.springframework.beans.factory.annotation.Autowired;
     import org.springframework.scheduling.annotation.Scheduled;
     import org.springframework.stereotype.Service;
@@ -30,7 +31,7 @@ package com.example.jwt_basics1.service;
                     blacklistedTokens.put(jti, expiration);
                 }
             } catch (Exception e) {
-                // Handle exception
+                throw new JwtException(e.getMessage());
             }
         }
 

@@ -1,6 +1,5 @@
 package com.example.jwt_basics1.controller;
 
-import com.example.jwt_basics1.config.JwtUtil;
 import com.example.jwt_basics1.dto.AuthenticationRequest;
 import com.example.jwt_basics1.dto.AuthenticationResponse;
 import com.example.jwt_basics1.dto.RefreshRequest;

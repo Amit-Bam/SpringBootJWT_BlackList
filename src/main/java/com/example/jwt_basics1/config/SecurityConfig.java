@@ -69,7 +69,7 @@ public class SecurityConfig {
 
                         .anyRequest().authenticated())
                 .logout(logout -> logout
-                        .logoutUrl("api/logout/**")
+                        .logoutUrl("/logout")
                         .logoutSuccessHandler(customLogoutHandler)
                         .invalidateHttpSession(true)
                         .clearAuthentication(true)
