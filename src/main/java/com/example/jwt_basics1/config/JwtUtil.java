@@ -98,6 +98,10 @@ public class JwtUtil {
         return extractClaim(token, Claims::getSubject);
     }
 
+    public String extractIpAddress(String token) {
+        return extractClaim(token, claims -> claims.get("ip", String.class));
+    }
+
     private <T> T extractClaim(String string, Function<Claims, T> claimsResolver) {
         final Claims claims = extractAllClaims(string);
         return claimsResolver.apply(claims);

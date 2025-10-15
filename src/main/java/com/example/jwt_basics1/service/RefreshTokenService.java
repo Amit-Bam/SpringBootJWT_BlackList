@@ -22,7 +22,6 @@ public class RefreshTokenService {
             throw new IllegalArgumentException("IP address is missing");
         }
         String username = jwtUtil.extractUsername(refreshToken);
-        System.out.println("Extracted username: " + username);
         UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
 
         if (!jwtUtil.validateToken(refreshToken, userDetails)) {
@@ -31,6 +30,9 @@ public class RefreshTokenService {
 
         if(tokenBlacklistService.isTokenBlacklisted(refreshToken)) {
             throw new RuntimeException("Refresh token has been blacklisted");
+        }
+        if(!jwtUtil.extractIpAddress(refreshToken).equals(ipAddress)) {
+            throw new RuntimeException("IP address does not match");
         }
         String newAccessToken = jwtUtil.generateToken(null, userDetails,ipAddress);
         String newRefreshToken = jwtUtil.generateRefreshToken(userDetails,ipAddress);

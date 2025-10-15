@@ -21,7 +21,8 @@ Content-Type: {{contentType}}
 
 {
   "username": "admin",
-  "password": "admin"
+  "password": "admin",
+  "ipAddress": "198.168.1.253"
 }
 
 ### COPY THE TOKEN FROM RESPONSE ABOVE AND PASTE BELOW
@@ -48,7 +49,8 @@ POST http://localhost:8080/api/refresh_token
 Content-Type: application/json
 
 {
-  "refreshToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2MDQ4Mjg1NiwiZXhwIjoxNzYxMDg3NjU2LCJ0eXAiOiJyZWZyZXNoIn0.RdYLINGL1-J7vNciwK9xBpFpzzR9F1Mpr9F5AaCthWw"
+  "refreshToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2MDUzODE1NywiZXhwIjoxNzYxMTQyOTU3LCJqdGkiOiI5MmQ1ZWUxZi1lZGU1LTQ3NWUtOGE4NC04M2M5ZTBkYzQxNmYiLCJ0eXAiOiJyZWZyZXNoIiwiaXAiOiIxOTguMTY4LjEuMjUzIn0.WdjCVWHhcJVfHMNYxq9Vcb13PRJ-LdOteSDBI6F06RU",
+  "ipAddress":"192.168.1.253"
 }
 ### 2.1 Test Admin Access - PASTE ADMIN TOKEN BELOW - Authorization: Bearer PASTE_ADMIN_TOKEN_HERE
 GET {{baseUrl}}/api/protected-message-admin

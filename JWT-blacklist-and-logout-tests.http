@@ -1,0 +1,113 @@
+### JWT Blacklist and Logout Testing
+### Save as logout-tests.http
+
+### Variables
+@baseUrl = http://localhost:8080
+@contentType = application/json
+
+### ===================================
+### STEP 1: LOGIN TO GET TOKENS
+### ===================================
+
+### 1.1 Login as Admin
+POST {{baseUrl}}/api/login
+Content-Type: {{contentType}}
+
+{
+  "username": "admin",
+  "password": "admin",
+  "ipAddress": "192.168.1.100"
+}
+
+### Copy accessToken and refreshToken from response
+### @accessToken = PASTE_ACCESS_TOKEN_HERE
+### @refreshToken = PASTE_REFRESH_TOKEN_HERE
+
+### ===================================
+### STEP 2: TEST PROTECTED ENDPOINTS (BEFORE LOGOUT)
+### ===================================
+
+### 2.1 Access Protected Resource (should succeed)
+GET {{baseUrl}}/api/protected-message
+Authorization: Bearer PASTE_ACCESS_TOKEN_HERE
+Content-Type: {{contentType}}
+
+### ===================================
+### STEP 3: PERFORM LOGOUT
+### ===================================
+
+### 3.1 Logout with Valid Token
+POST {{baseUrl}}/logout
+Authorization: Bearer PASTE_ACCESS_TOKEN_HERE
+Content-Type: {{contentType}}
+
+### ===================================
+### STEP 4: TEST BLACKLIST FUNCTIONALITY
+### ===================================
+
+### 4.1 Try to Access Protected Resource After Logout (should fail with 401)
+GET {{baseUrl}}/api/protected-message
+Authorization: Bearer PASTE_ACCESS_TOKEN_HERE
+Content-Type: {{contentType}}
+
+### ===================================
+### STEP 5: TEST REFRESH TOKEN AFTER LOGOUT
+### ===================================
+
+### 5.1 Try to Refresh Token After Logout (should fail)
+POST {{baseUrl}}/api/refresh_token
+Content-Type: {{contentType}}
+
+{
+  "refreshToken": "PASTE_REFRESH_TOKEN_HERE",
+  "ipAddress": "192.168.1.100"
+}
+
+### ===================================
+### STEP 6: LOGIN AGAIN (NEW SESSION)
+### ===================================
+
+### 6.1 Login Again to Get Fresh Tokens
+POST {{baseUrl}}/api/login
+Content-Type: {{contentType}}
+
+{
+  "username": "admin",
+  "password": "admin",
+  "ipAddress": "192.168.1.100"
+}
+
+### Copy new tokens from response
+### @newAccessToken = PASTE_NEW_ACCESS_TOKEN_HERE
+### @newRefreshToken = PASTE_NEW_REFRESH_TOKEN_HERE
+
+### 6.2 Access Protected Resource with New Token (should succeed)
+GET {{baseUrl}}/api/protected-message
+Authorization: Bearer PASTE_NEW_ACCESS_TOKEN_HERE
+Content-Type: {{contentType}}
+
+### ===================================
+### STEP 7: TEST IP ADDRESS VALIDATION
+### ===================================
+
+### 7.1 Try to Refresh Token with Different IP (should fail)
+POST {{baseUrl}}/api/refresh_token
+Content-Type: {{contentType}}
+
+{
+  "refreshToken": "PASTE_NEW_REFRESH_TOKEN_HERE",
+  "ipAddress": "10.0.0.1"
+}
+
+### ===================================
+### EXPECTED RESULTS
+### ===================================
+###
+### 1. Login: 200 OK with tokens
+### 2. Access before logout: 200 OK with protected message
+### 3. Logout: 200 OK with "Logout successful" message
+### 4. Access after logout: 401 Unauthorized (token blacklisted)
+### 5. Refresh after logout: 401 Unauthorized (refresh token invalidated)
+### 6.1 New login: 200 OK with new tokens
+### 6.2 Access with new token: 200 OK
+### 7. Refresh with wrong IP: 401 Unauthorized (IP mismatch)

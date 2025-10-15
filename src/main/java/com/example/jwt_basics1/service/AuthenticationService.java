@@ -30,7 +30,7 @@ public class AuthenticationService {
             throw new IllegalArgumentException("IP address is missing");
         }
         String ipAddress = authenticationRequest.getIpAddress();
-        // generate  the access token
+        // generate the access token
         String accessToken = jwtUtil.generateToken(authenticationRequest, userDetails,ipAddress);
 
         // generate the refresh token

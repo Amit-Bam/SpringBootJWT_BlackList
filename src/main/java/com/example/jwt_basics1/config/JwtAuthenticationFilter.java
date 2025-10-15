@@ -1,6 +1,7 @@
 package com.example.jwt_basics1.config;
 
 import com.example.jwt_basics1.service.CustomUserDetailsService;
+import com.example.jwt_basics1.service.TokenBlacklistService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,7 +22,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     final private JwtUtil jwtUtil;
     final private CustomUserDetailsService customUserDetailsService;
-
+    final private TokenBlacklistService tokenBlacklistService;
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
@@ -51,17 +52,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             // alternatively, try to get the token from a query parameter
             token = request.getParameter("token");
         }
-        if (token == null || token.isBlank()) {
-            filterChain.doFilter(request, response);
+
+//         Strict approach: if no token is provided, return 401 Unauthorized
+        if (token == null) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("Missing authentication token");
             return;
         }
-
-        // Strict approach: if no token is provided, return 401 Unauthorized
-//        if (token == null) {
-//            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-//            response.getWriter().write("Missing authentication token");
-//            return;
-//        }
 
         try {
             // extract the username from the token
@@ -86,13 +83,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 response.getWriter().write("Invalid or expired token");
                 return;
             }
+            if (tokenBlacklistService.isTokenBlacklisted(token)) {
+                // If the token is blacklisted, return 401 Unauthorized
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.getWriter().write("Token has been revoked");
+                return;
+            }
         } catch (UsernameNotFoundException | AuthenticationCredentialsNotFoundException ex) {
             // Return 401 Unauthorized for invalid credentials
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.getWriter().write(ex.getMessage());
             return;
             // any other exception, such as token expiration or invalid signature,
-        } catch (Exception ex) {
+        }
+        catch (Exception ex) {
             // For other exceptions, return 500 Internal Server Error
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             response.getWriter().write("An error occurred while processing the token");

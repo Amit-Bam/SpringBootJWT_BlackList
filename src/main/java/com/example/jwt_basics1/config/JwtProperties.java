@@ -1,6 +1,5 @@
 package com.example.jwt_basics1.config;
 
-import java.util.concurrent.TimeUnit;
 
 public class JwtProperties {
 

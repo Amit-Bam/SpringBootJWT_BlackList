@@ -1,6 +1,7 @@
 package com.example.jwt_basics1.config;
 
 import com.example.jwt_basics1.service.CustomUserDetailsService;
+import com.example.jwt_basics1.service.TokenBlacklistService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,7 +14,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
-
 import java.util.List;
 
 
@@ -24,6 +24,9 @@ public class SecurityConfig {
 
     private final JwtUtil jwtUtil;
     private final CustomUserDetailsService userDetailsService;
+    private final TokenBlacklistService tokenBlacklistService;
+    private final CustomLogoutHandler customLogoutHandler;
+
 
     @Bean
     public static PasswordEncoder passwordEncoder() {
@@ -49,7 +52,7 @@ public class SecurityConfig {
 
 
                 // adding a custom JWT authentication filter
-                .addFilterBefore(new JwtAuthenticationFilter(jwtUtil, userDetailsService),
+                .addFilterBefore(new JwtAuthenticationFilter(jwtUtil, userDetailsService, tokenBlacklistService),
                         UsernamePasswordAuthenticationFilter.class)
 
                 // The SessionCreationPolicy.STATELESS setting means that the application will not create or use HTTP sessions.
@@ -64,7 +67,15 @@ public class SecurityConfig {
                         .requestMatchers("api/protected-message-admin").hasAnyRole("ADMIN")
                         .requestMatchers("api/protected-message").hasAnyRole("USER", "ADMIN")
 
-                        .anyRequest().authenticated());
+                        .anyRequest().authenticated())
+                .logout(logout -> logout
+                        .logoutUrl("api/logout/**")
+                        .logoutSuccessHandler(customLogoutHandler)
+                        .invalidateHttpSession(true)
+                        .clearAuthentication(true)
+                        .permitAll());
+
+
 
         return http.build();
     }
