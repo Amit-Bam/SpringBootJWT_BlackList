@@ -1,0 +1,292 @@
+### Stage 2 JWT Authentication API Tests - SIMPLE COPY-PASTE VERSION
+### Save this file as: stage2-jwt-tests-simple.http
+### Use with IntelliJ IDEA Ultimate HTTP Client
+
+### INSTRUCTIONS:
+### 1. Run login request below
+### 2. Copy the accessToken from response
+### 3. Paste it in the "PASTE_TOKEN_HERE" placeholders below
+
+### Variables
+@baseUrl = http://localhost:8080
+@contentType = application/json
+@token =
+### ===================================
+### STEP 1: LOGIN TO GET TOKENS
+### ===================================
+
+### 1.1 Login as Admin
+POST {{baseUrl}}/api/login
+Content-Type: {{contentType}}
+
+{
+  "username": "admin",
+  "password": "admin"
+}
+
+### COPY THE TOKEN FROM RESPONSE ABOVE AND PASTE BELOW
+
+###
+
+### 1.2 Login as User
+POST {{baseUrl}}/api/login
+Content-Type: {{contentType}}
+
+{
+  "username": "user",
+  "password": "user"
+}
+
+### COPY THE TOKEN FROM RESPONSE ABOVE FOR USER TESTS
+
+### ===================================
+### STEP 2: TEST PROTECTED ENDPOINTS
+### ===================================
+
+## 2.0 Test Token Refresh
+POST http://localhost:8080/api/refresh_token
+Content-Type: application/json
+
+{
+  "refreshToken":"eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2MDQ4Mjg1NiwiZXhwIjoxNzYxMDg3NjU2LCJ0eXAiOiJyZWZyZXNoIn0.RdYLINGL1-J7vNciwK9xBpFpzzR9F1Mpr9F5AaCthWw"
+}
+### 2.1 Test Admin Access - PASTE ADMIN TOKEN BELOW - Authorization: Bearer PASTE_ADMIN_TOKEN_HERE
+GET {{baseUrl}}/api/protected-message-admin
+Authorization: Bearer {{token}}
+
+Content-Type: {{contentType}}
+
+###
+
+### 2.2 Test User Access - PASTE USER TOKEN BELOW
+GET {{baseUrl}}/api/protected-message-admin
+Authorization: Bearer PASTE_ADMIN_TOKEN_HERE
+Content-Type: {{contentType}}
+
+###
+
+### 2.3 Test Access Without Token (Should fail with 401)
+GET {{baseUrl}}/api/protected-message
+Content-Type: {{contentType}}
+
+### ===================================
+### STEP 3: TOKEN VALIDATION TESTS
+### ===================================
+
+### 3.1 Test Invalid Token Format
+GET {{baseUrl}}/api/protected-message
+Authorization: Bearer invalid.jwt.token.here
+Content-Type: {{contentType}}
+
+###
+
+### 3.2 Test Malformed Bearer Header
+GET {{baseUrl}}/api/protected-message
+Authorization: InvalidBearer {{token}}
+Content-Type: {{contentType}}
+
+###
+
+### 3.3 Test Empty Bearer Token
+GET {{baseUrl}}/api/protected-message
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+###
+
+### 3.4 Test Token as Query Parameter - PASTE TOKEN BELOW
+GET {{baseUrl}}/api/protected-message?token={{token}}
+Content-Type: {{contentType}}
+
+### ===================================
+### STEP 4: LOGIN FAILURE TESTS
+### ===================================
+
+### 4.1 Test Invalid Password
+POST {{baseUrl}}/api/login
+Content-Type: {{contentType}}
+
+{
+  "username": "admin",
+  "password": "wrongpassword"
+}
+
+###
+
+### 4.2 Test Non-existent User
+POST {{baseUrl}}/api/login
+Content-Type: {{contentType}}
+
+{
+  "username": "nonexistent",
+  "password": "password"
+}
+
+###
+
+### 4.3 Test Empty Credentials
+POST {{baseUrl}}/api/login
+Content-Type: {{contentType}}
+
+{
+  "username": "",
+  "password": ""
+}
+
+###
+
+### 4.4 Test Missing Password
+POST {{baseUrl}}/api/login
+Content-Type: {{contentType}}
+
+{
+  "username": "admin"
+}
+
+### ===================================
+### STEP 5: SECURITY TESTS
+### ===================================
+
+### 5.1 SQL Injection Attempt
+POST {{baseUrl}}/api/login
+Content-Type: {{contentType}}
+
+{
+  "username": "admin'; DROP TABLE users; --",
+  "password": "admin"
+}
+
+###
+
+### 5.2 XSS Attempt
+POST {{baseUrl}}/api/login
+Content-Type: {{contentType}}
+
+{
+  "username": "<script>alert('xss')</script>",
+  "password": "admin"
+}
+
+###
+
+### 5.3 Very Long Username
+POST {{baseUrl}}/api/login
+Content-Type: {{contentType}}
+
+{
+  "username": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "password": "admin"
+}
+
+### ===================================
+### STEP 6: CORS TESTS
+### ===================================
+
+### 6.1 CORS Preflight for Login
+OPTIONS {{baseUrl}}/api/login
+Origin: http://localhost:5173
+Access-Control-Request-Method: POST
+Access-Control-Request-Headers: Content-Type
+
+###
+
+### 6.2 CORS Preflight for Protected Endpoint
+OPTIONS {{baseUrl}}/api/protected-message
+Origin: http://localhost:5173
+Access-Control-Request-Method: GET
+Access-Control-Request-Headers: Authorization
+
+### ===================================
+### STEP 7: QUICK EXAMPLES WITH REAL TOKENS
+### ===================================
+
+### Example: Recent working tokens (replace with your fresh tokens)
+
+### 7.1 Example Fresh Login
+POST {{baseUrl}}/api/login
+Content-Type: {{contentType}}
+
+{
+  "username": "admin",
+  "password": "admin"
+}
+
+### Response will look like:
+### {
+###   "accessToken": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc1MDUwOTk3NCwiZXhwIjoxNzUwNTEwMjc0LCJyb2xlcyI6WyJST0xFX0FETUlOIl0sImlzc3VlZEJ5IjoibGVhcm5pbmcgSldUIHdpdGggU3ByaW5nIFNlY3VyaXR5In0.GCYNfkYgGCwWxL4RwZZKfZJOHKfPXwef9oD8GLpRYDU"
+### }
+
+###
+
+### 7.2 Use Fresh Token Immediately
+GET {{baseUrl}}/api/protected-message
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc1MDUwOTk3NCwiZXhwIjoxNzUwNTEwMjc0LCJyb2xlcyI6WyJST0xFX0FETUlOIl0sImlzc3VlZEJ5IjoibGVhcm5pbmcgSldUIHdpdGggU3ByaW5nIFNlY3VyaXR5In0.GCYNfkYgGCwWxL4RwZZKfZJOHKfPXwef9oD8GLpRYDU
+Content-Type: {{contentType}}
+
+### REPLACE THE TOKEN ABOVE WITH YOUR FRESH TOKEN
+
+### ===================================
+### EXPECTED RESULTS SUMMARY
+### ===================================
+###
+### LOGIN REQUESTS:
+### - Valid credentials: 200 OK with JWT token
+### - Invalid credentials: 401 Unauthorized
+### - Missing fields: 400 Bad Request or 401 Unauthorized
+###
+### PROTECTED ENDPOINT (/api/protected-message):
+### - With valid token: 200 OK + "Welcome to the Backend Server home page"
+### - Without token: 401 Unauthorized
+### - With invalid token: 401 Unauthorized or 500 Internal Server Error
+### - With expired token: 401 Unauthorized or 500 Internal Server Error
+###
+### TOKEN CHARACTERISTICS:
+### - Format: JWT with 3 parts (header.payload.signature)
+### - Algorithm: HS256
+### - Expiration: 5 minutes (300,000 ms)
+### - Contains: username, roles, issued time, expiration time
+###
+### CORS:
+### - Allowed origin: http://localhost:5173
+### - Allowed methods: GET, POST, PUT, DELETE, OPTIONS
+### - Allowed headers: *
+###
+### ===================================
+### TROUBLESHOOTING GUIDE
+### ===================================
+###
+### IF YOU GET 500 ERRORS:
+### 1. Check server console logs for JWT errors
+### 2. Make sure JwtAuthenticationFilter is working
+### 3. Verify JWT secret key is consistent
+### 4. Check token format and signature
+###
+### IF YOU GET 401 ERRORS:
+### 1. Check if token is correctly formatted
+### 2. Verify token hasn't expired (5 minutes max)
+### 3. Make sure "Bearer " prefix is included
+### 4. Try generating a fresh token
+###
+### IF YOU GET 403 ERRORS:
+### 1. Check if endpoint exists
+### 2. Verify user has required roles
+### 3. Check SecurityConfig authorization rules
+###
+### COMMON MISTAKES:
+### 1. Using old/expired tokens
+### 2. Missing "Bearer " prefix
+### 3. Extra spaces in Authorization header
+### 4. Using wrong endpoint URLs
+### 5. Copy-paste errors with tokens
+###
+### TOKEN DECODE:
+### To see token contents, paste your JWT at https://jwt.io
+### You should see:
+### - Header: {"alg":"HS256","typ":"JWT"}
+### - Payload: {"sub":"admin","iat":...,"exp":...,"roles":["ROLE_ADMIN"],"issuedBy":"learning JWT with Spring Security"}
+###
+### WORKING EXAMPLE FLOW:
+### 1. POST /api/login with admin/admin
+### 2. Copy accessToken from response
+### 3. GET /api/protected-message with "Authorization: Bearer <token>"
+### 4. Should get 200 OK with welcome message
