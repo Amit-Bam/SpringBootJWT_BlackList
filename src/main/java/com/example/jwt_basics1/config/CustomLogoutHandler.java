@@ -38,13 +38,7 @@ public class CustomLogoutHandler implements LogoutSuccessHandler {
             return;
         }
         try {
-            // Extract username from the access token
-            String username = jwtUtil.extractUsername(accessToken);
-
-            // First blacklist the specific access token that was provided
             tokenBlacklistService.blacklistToken(accessToken);
-            // Then blacklist all tokens associated with the user
-            tokenBlacklistService.blacklistUserTokensOnLogout(username);
 
             response.setStatus(HttpServletResponse.SC_OK);
             response.getWriter().write("Logout successful");

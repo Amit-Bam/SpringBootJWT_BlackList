@@ -16,42 +16,20 @@ package com.example.jwt_basics1.service;
         @Autowired
         private JwtUtil jwtUtil;
 
-        // Using ConcurrentHashMap for thread safety with multiple sessions
         private final ConcurrentHashMap<String, Date> blacklistedTokens = new ConcurrentHashMap<>();
-        private final ConcurrentHashMap<String, Long> userLogoutTimestamps = new ConcurrentHashMap<>();
 
         public void blacklistToken(String token) {
-            // Explicitly blacklist this specific token
+            removeExpiredTokens();
             Date expiration = jwtUtil.extractExpiration(token);
-            blacklistedTokens.put(token,expiration);
+            blacklistedTokens.put(jwtUtil.extractJoinedUUID(token),expiration);
         }
 
-        public void blacklistUserTokensOnLogout(String username) {
-            // Record the logout timestamp for this user
-            userLogoutTimestamps.put(username, System.currentTimeMillis());
-        }
 
         public boolean isTokenBlacklisted(String token) {
-            // Check if token is explicitly blacklisted
-            if (blacklistedTokens.containsKey(token)) {
-                return true;
-            }
-
-            try {
-                String username = jwtUtil.extractUsername(token);
-                Date issuedAt = jwtUtil.extractIssuedAt(token);
-
-                if (username != null && issuedAt != null && userLogoutTimestamps.containsKey(username)) {
-                    // If this token was issued before the user logged out, it's invalid
-                    return issuedAt.getTime() < userLogoutTimestamps.get(username);
-                }
-            } catch (Exception e) {
-                // If we can't process the token, consider it invalid
-                return true;
-            }
-
-            return false;
+            removeExpiredTokens();
+            return blacklistedTokens.containsKey(jwtUtil.extractJoinedUUID(token));
         }
+
 
         public synchronized void removeExpiredTokens() {
             Date now = new Date();

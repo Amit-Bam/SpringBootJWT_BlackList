@@ -36,7 +36,7 @@ public class AuthenticationController {
     @PostMapping("/refresh_token")
     public ResponseEntity<?> refreshToken(@RequestBody RefreshRequest request) {
         try {
-            AuthenticationResponse authResponse = refreshTokenService.refresh(request.getRefreshToken(),request.getIpAddress());
+            AuthenticationResponse authResponse = refreshTokenService.refresh(request);
             return ResponseEntity.ok(authResponse);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());

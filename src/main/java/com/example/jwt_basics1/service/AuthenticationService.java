@@ -35,8 +35,12 @@ public class AuthenticationService {
 
         // generate the refresh token
         String refreshToken = jwtUtil.generateRefreshToken(userDetails,ipAddress);
+
+        // add the joined UUID to the tokens
+        String newAccessToken = jwtUtil.addJoinedUUIDToToken(accessToken,refreshToken);
+        String newRefreshToken = jwtUtil.addJoinedUUIDToToken(refreshToken,accessToken);
         // return the AuthenticationResponse object
-        return new AuthenticationResponse(accessToken, refreshToken);
+        return new AuthenticationResponse(newAccessToken, newRefreshToken);
     }
 }
 

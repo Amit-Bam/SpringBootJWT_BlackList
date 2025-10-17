@@ -12,12 +12,10 @@ import org.springframework.stereotype.Component;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.xml.crypto.Data;
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -76,6 +74,28 @@ public class JwtUtil {
                 .signWith(getKey())
                 .compact();
     }
+    public String addJoinedUUIDToToken(String token1, String token2){
+        Objects.requireNonNull(token1, "token1 must not be null");
+        Objects.requireNonNull(token2, "token2 must not be null");
+
+        String jti1 = extractJti(token1);
+        String jti2 = extractJti(token2);
+
+        // Determine canonical order
+        boolean jti1First = jti1.compareTo(jti2) <= 0;
+        String firstJti = jti1First ? jti1 : jti2;
+        String secondJti = jti1First ? jti2 : jti1;
+
+        // Create order-independent joined UUID
+        String joinedUUID = getJoinedUUIDToClaims(firstJti, secondJti);
+        Claims claims = extractAllClaims(token1);
+        String joinedJTI = Jwts.builder()
+                .setClaims(claims)
+                .claim("joinedJTI", joinedUUID)
+                .signWith(getKey())
+                .compact();
+        return joinedJTI;
+    }
 
     // Extract the expiration date from a JWT token and implicitly validate the token
     // This implementation implicitly validates the signature when extracting claims:
@@ -93,6 +113,32 @@ public class JwtUtil {
             throw new RuntimeException("The token signature is invalid: " + e.getMessage());
         }
         // Other exceptions related to token parsing can also be caught here if necessary
+    }
+
+    public String getJoinedUUIDToClaims(String uuid1, String uuid2) {
+        Objects.requireNonNull(uuid1, "uuid1 must not be null");
+        Objects.requireNonNull(uuid2, "uuid2 must not be null");
+
+        String s1 = uuid1.trim();
+        String s2 = uuid2.trim();
+
+        // Validate UUID format
+        UUID u1;
+        UUID u2;
+        try {
+            u1 = UUID.fromString(s1);
+            u2 = UUID.fromString(s2);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("One or both inputs are not valid UUIDs", e);
+        }
+
+        // Canonical, order-independent representation
+        String first = u1.toString().compareTo(u2.toString()) <= 0 ? u1.toString() : u2.toString();
+        String second = first.equals(u1.toString()) ? u2.toString() : u1.toString();
+
+        String joined = first + ":" + second;
+        return Base64.getUrlEncoder().withoutPadding()
+                .encodeToString(joined.getBytes(StandardCharsets.UTF_8));
     }
 
     // Extract the username from a JWT token
@@ -125,6 +171,9 @@ public class JwtUtil {
 
     public String extractJti(String token) {
         return extractClaim(token, Claims::getId);
+    }
+    public String extractJoinedUUID(String token) {
+        return extractClaim(token, claims -> claims.get("joinedJTI", String.class));
     }
 
     public boolean isValidTokenStructure(String token) {

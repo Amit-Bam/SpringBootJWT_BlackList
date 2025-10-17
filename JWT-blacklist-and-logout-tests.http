@@ -29,7 +29,7 @@ Content-Type: {{contentType}}
 
 ### 2.1 Access Protected Resource (should succeed)
 GET {{baseUrl}}/api/protected-message
-Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc2MDUzODkzMywiZXhwIjoxNzYwNTM5MjMzLCJqdGkiOiIyYTcyZGMwYS1jYzNiLTRhN2YtYmZjYS1lY2UxMzhlNDY2NGEiLCJyb2xlcyI6WyJST0xFX0FETUlOIiwiUk9MRV9VU0VSIl0sImlzc3VlZEJ5IjoibGVhcm5pbmcgSldUIHdpdGggU3ByaW5nIFNlY3VyaXR5IiwiaXAiOiIxOTIuMTY4LjEuMjUzIn0.yGVg7o3WbcMpZXwHebN3u9mL1ra6aBI5cvtdiICuSpk
+Authorization: Bearer PASTE_ACCESS_TOKEN_HERE
 Content-Type: {{contentType}}
 
 ### ===================================

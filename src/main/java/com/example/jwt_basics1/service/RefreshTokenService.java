@@ -2,6 +2,7 @@ package com.example.jwt_basics1.service;
 
 import com.example.jwt_basics1.config.JwtUtil;
 import com.example.jwt_basics1.dto.AuthenticationResponse;
+import com.example.jwt_basics1.dto.RefreshRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -14,7 +15,9 @@ public class RefreshTokenService {
     private final TokenBlacklistService tokenBlacklistService;
     private final CustomUserDetailsService customUserDetailsService;
 
-    public AuthenticationResponse refresh(String refreshToken, String ipAddress) {
+    public AuthenticationResponse refresh(RefreshRequest request) {
+        String refreshToken = request.getRefreshToken();
+        String ipAddress = request.getIpAddress();
         if (refreshToken == null || refreshToken.trim().isEmpty()) {
             throw new IllegalArgumentException("Refresh token is missing");
         }
@@ -23,23 +26,27 @@ public class RefreshTokenService {
         }
         String username = jwtUtil.extractUsername(refreshToken);
         UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
-
         if (!jwtUtil.validateToken(refreshToken, userDetails)) {
             throw new RuntimeException("Invalid or expired refresh token");
         }
+
         if(jwtUtil.extractTokenType(refreshToken).equals("access")) {
             throw new RuntimeException("Provided token is not a refresh token");
         }
 
-        if(tokenBlacklistService.isTokenBlacklisted(refreshToken)) {
+        if (tokenBlacklistService.isTokenBlacklisted(refreshToken)) {
             throw new RuntimeException("Refresh token has been blacklisted");
         }
+
         if(!jwtUtil.extractIpAddress(refreshToken).equals(ipAddress)) {
             throw new RuntimeException("IP address does not match");
         }
+
         String newAccessToken = jwtUtil.generateToken(null, userDetails,ipAddress);
         String newRefreshToken = jwtUtil.generateRefreshToken(userDetails,ipAddress);
         tokenBlacklistService.blacklistToken(refreshToken);
-        return new AuthenticationResponse(newAccessToken, newRefreshToken);
+        String generatedNewAccessToken = jwtUtil.addJoinedUUIDToToken(newAccessToken,newRefreshToken);
+        String generatedNewRefreshToken = jwtUtil.addJoinedUUIDToToken(newRefreshToken,newAccessToken);
+        return new AuthenticationResponse(generatedNewAccessToken, generatedNewRefreshToken);
     }
 }
